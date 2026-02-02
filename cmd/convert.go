@@ -17,6 +17,7 @@ var (
 	outputDir    string
 	targetFormat string
 	quality      int
+	maxSize      string
 	jobs         int
 	overwrite    bool
 )
@@ -52,9 +53,23 @@ var convertCmd = &cobra.Command{
 			return
 		}
 
+		var parsedMaxSize int64
+		if maxSize != "" {
+			var err error
+			parsedMaxSize, err = converter.ParseSize(maxSize)
+			if err != nil {
+				fmt.Printf("Error parsing max-size: %v\n", err)
+				os.Exit(1)
+			}
+			if !cmd.Flags().Changed("quality") {
+				quality = 90
+			}
+		}
+
 		opts := converter.Options{
 			Format:    converter.Format(targetFormat),
 			Quality:   quality,
+			MaxSize:   parsedMaxSize,
 			Overwrite: overwrite,
 		}
 
@@ -133,6 +148,7 @@ func init() {
 	convertCmd.Flags().StringVarP(&outputDir, "output", "o", "./output", "Output directory")
 	convertCmd.Flags().StringVarP(&targetFormat, "format", "f", "webp", "Output format (jpg, png, webp, avif)")
 	convertCmd.Flags().IntVarP(&quality, "quality", "q", 80, "Image quality (0-100)")
+	convertCmd.Flags().StringVar(&maxSize, "max-size", "", "Maximum allowed output file size (e.g., 200kb, 1mb)")
 	convertCmd.Flags().IntVarP(&jobs, "jobs", "j", 4, "Number of concurrent jobs")
 	convertCmd.Flags().BoolVar(&overwrite, "overwrite", false, "Overwrite existing files")
 

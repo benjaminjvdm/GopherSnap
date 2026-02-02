@@ -1,7 +1,9 @@
 package converter
 
 import (
+	"bytes"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -48,13 +50,33 @@ func Convert(inputPath, outputDir string, opts Options) Result {
 		return Result{InputPath: inputPath, Error: fmt.Errorf("unsupported format: %s", opts.Format)}
 	}
 
+	var buf bytes.Buffer
+	currentQuality := opts.Quality
+
+	for {
+		buf.Reset()
+		err := encoder.Encode(&buf, img, currentQuality)
+		if err != nil {
+			return Result{InputPath: inputPath, Error: err}
+		}
+
+		if opts.MaxSize <= 0 || int64(buf.Len()) <= opts.MaxSize || currentQuality <= 10 {
+			break
+		}
+
+		currentQuality -= 5
+		if currentQuality < 10 {
+			currentQuality = 10
+		}
+	}
+
 	out, err := os.Create(outputPath)
 	if err != nil {
 		return Result{InputPath: inputPath, Error: err}
 	}
 	defer out.Close()
 
-	err = encoder.Encode(out, img, opts.Quality)
+	_, err = io.Copy(out, &buf)
 	if err != nil {
 		return Result{InputPath: inputPath, Error: err}
 	}
