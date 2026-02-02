@@ -24,6 +24,7 @@ const (
 type Options struct {
 	Format       Format
 	Quality      int
+	MaxSize      int64
 	Overwrite    bool
 	PreserveMeta bool
 }
