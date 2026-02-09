@@ -27,6 +27,8 @@ type Options struct {
 	MaxSize      int64
 	Overwrite    bool
 	PreserveMeta bool
+	Width        int
+	Height       int
 }
 
 type ImageEncoder interface {

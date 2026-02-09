@@ -3,11 +3,14 @@ package converter
 import (
 	"bytes"
 	"fmt"
+	"image"
 	"io"
 	"os"
 	"path/filepath"
 	"strings"
 	"sync"
+
+	"golang.org/x/image/draw"
 )
 
 type Result struct {
@@ -16,10 +19,46 @@ type Result struct {
 	Error      error
 }
 
+func resizeImage(img image.Image, width, height int) image.Image {
+	bounds := img.Bounds()
+	origWidth := bounds.Dx()
+	origHeight := bounds.Dy()
+
+	if width == 0 && height == 0 {
+		return img
+	}
+
+	targetWidth := width
+	targetHeight := height
+
+	if width > 0 && height == 0 {
+		targetHeight = int(float64(origHeight) * float64(width) / float64(origWidth))
+	} else if width == 0 && height > 0 {
+		targetWidth = int(float64(origWidth) * float64(height) / float64(origHeight))
+	} else {
+		ratioW := float64(width) / float64(origWidth)
+		ratioH := float64(height) / float64(origHeight)
+		ratio := ratioW
+		if ratioH < ratioW {
+			ratio = ratioH
+		}
+		targetWidth = int(float64(origWidth) * ratio)
+		targetHeight = int(float64(origHeight) * ratio)
+	}
+
+	newImg := image.NewRGBA(image.Rect(0, 0, targetWidth, targetHeight))
+	draw.CatmullRom.Scale(newImg, newImg.Bounds(), img, img.Bounds(), draw.Over, nil)
+	return newImg
+}
+
 func Convert(inputPath, outputDir string, opts Options) Result {
 	img, _, err := LoadImage(inputPath)
 	if err != nil {
 		return Result{InputPath: inputPath, Error: err}
+	}
+
+	if opts.Width > 0 || opts.Height > 0 {
+		img = resizeImage(img, opts.Width, opts.Height)
 	}
 
 	if err := os.MkdirAll(outputDir, 0755); err != nil {

@@ -136,3 +136,73 @@ func TestConvertWithMaxSize(t *testing.T) {
 		t.Logf("Note: final size %d still exceeds maxSize %d because min quality reached", info.Size(), maxSize)
 	}
 }
+
+func TestConvertWithResizing(t *testing.T) {
+	tempDir, err := os.MkdirTemp("", "goconv_resize_test")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.RemoveAll(tempDir)
+
+	img := image.NewRGBA(image.Rect(0, 0, 100, 200))
+	imgPath := filepath.Join(tempDir, "original.png")
+	f, err := os.Create(imgPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	png.Encode(f, img)
+	f.Close()
+
+	outputDir := filepath.Join(tempDir, "output")
+
+	tests := []struct {
+		name           string
+		opts           Options
+		expectedWidth  int
+		expectedHeight int
+	}{
+		{
+			name:           "Resize width only",
+			opts:           Options{Width: 50, Format: FormatPNG, Overwrite: true},
+			expectedWidth:  50,
+			expectedHeight: 100,
+		},
+		{
+			name:           "Resize height only",
+			opts:           Options{Height: 100, Format: FormatPNG, Overwrite: true},
+			expectedWidth:  50,
+			expectedHeight: 100,
+		},
+		{
+			name:           "Resize both (fit width)",
+			opts:           Options{Width: 40, Height: 100, Format: FormatPNG, Overwrite: true},
+			expectedWidth:  40,
+			expectedHeight: 80,
+		},
+		{
+			name:           "Resize both (fit height)",
+			opts:           Options{Width: 100, Height: 80, Format: FormatPNG, Overwrite: true},
+			expectedWidth:  40,
+			expectedHeight: 80,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			res := Convert(imgPath, outputDir, tt.opts)
+			if res.Error != nil {
+				t.Fatalf("Conversion failed: %v", res.Error)
+			}
+
+			outputImg, _, err := LoadImage(res.OutputPath)
+			if err != nil {
+				t.Fatalf("Failed to load output image: %v", err)
+			}
+
+			bounds := outputImg.Bounds()
+			if bounds.Dx() != tt.expectedWidth || bounds.Dy() != tt.expectedHeight {
+				t.Errorf("Expected size %dx%d, got %dx%d", tt.expectedWidth, tt.expectedHeight, bounds.Dx(), bounds.Dy())
+			}
+		})
+	}
+}
