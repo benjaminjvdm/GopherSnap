@@ -46,11 +46,26 @@ Convert a specific file to AVIF with custom quality and concurrency:
 gophersnap convert -i photo.jpg -o ./optimized -f avif -q 75 -j 8
 ```
 
+### Image Resizing
+
+Resize images while maintaining aspect ratio:
+
+```bash
+# Resize to 800px width (height calculated automatically)
+gophersnap convert -i ./images --width 800
+
+# Resize to fit within 1024x1024
+gophersnap convert -i ./images --width 1024 --height 1024
+```
+
 ### Available Flags
 
 - `-i, --input string`: Input file or directory (Required)
 - `-o, --output string`: Output directory (Default: `./output`)
 - `-f, --format string`: Output format: `jpg`, `png`, `webp`, `avif` (Default: `webp`)
 - `-q, --quality int`: Image quality (0-100) (Default: `80`)
+- `--max-size string`: Maximum file size (e.g., `500kb`, `1mb`)
+- `--width int`: Target width (maintaining aspect ratio)
+- `--height int`: Target height (maintaining aspect ratio)
 - `-j, --jobs int`: Number of concurrent jobs (Default: `4`)
 - `--overwrite`: Overwrite existing files if they exist in the output directory

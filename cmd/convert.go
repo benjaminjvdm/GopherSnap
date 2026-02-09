@@ -18,6 +18,8 @@ var (
 	targetFormat string
 	quality      int
 	maxSize      string
+	width        int
+	height       int
 	jobs         int
 	overwrite    bool
 )
@@ -54,6 +56,11 @@ var convertCmd = &cobra.Command{
 		}
 
 		var parsedMaxSize int64
+		if width < 0 || height < 0 {
+			fmt.Println(errorStyle.Render("Error: width and height must be non-negative"))
+			os.Exit(1)
+		}
+
 		if maxSize != "" {
 			var err error
 			parsedMaxSize, err = converter.ParseSize(maxSize)
@@ -71,6 +78,8 @@ var convertCmd = &cobra.Command{
 			Quality:   quality,
 			MaxSize:   parsedMaxSize,
 			Overwrite: overwrite,
+			Width:     width,
+			Height:    height,
 		}
 
 		fmt.Println(titleStyle.Render("🚀 GopherSnap: Starting Batch Processing"))
@@ -149,6 +158,8 @@ func init() {
 	convertCmd.Flags().StringVarP(&targetFormat, "format", "f", "webp", "Output format (jpg, png, webp, avif)")
 	convertCmd.Flags().IntVarP(&quality, "quality", "q", 80, "Image quality (0-100)")
 	convertCmd.Flags().StringVar(&maxSize, "max-size", "", "Maximum allowed output file size (e.g., 200kb, 1mb)")
+	convertCmd.Flags().IntVar(&width, "width", 0, "Target width (maintaining aspect ratio)")
+	convertCmd.Flags().IntVar(&height, "height", 0, "Target height (maintaining aspect ratio)")
 	convertCmd.Flags().IntVarP(&jobs, "jobs", "j", 4, "Number of concurrent jobs")
 	convertCmd.Flags().BoolVar(&overwrite, "overwrite", false, "Overwrite existing files")
 
