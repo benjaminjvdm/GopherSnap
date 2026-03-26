@@ -5,6 +5,7 @@ GopherSnap is a high-performance, concurrent CLI image converter written in Go. 
 ## Features
 
 - **Batch Conversion**: Process entire directories of images at once.
+- **Recursive Directory Mirroring**: Preserves input directory structure in the output.
 - **Concurrent Processing**: Leverages Go's goroutines for fast, parallel execution.
 - **Modern Formats**: Supports JPG, PNG, WebP, and AVIF.
 - **No CGO**: Uses pure-Go/WASM implementations for WebP and AVIF for easy portability.
@@ -32,7 +33,7 @@ GopherSnap provides a simple `convert` command to handle your image processing n
 
 ### Basic Example
 
-Convert all images in a folder to WebP:
+Convert all images in a folder to WebP. GopherSnap will automatically mirror the input directory's structure in the output directory:
 
 ```bash
 gophersnap convert -i ./input-images -o ./output-images -f webp

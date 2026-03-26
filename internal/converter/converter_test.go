@@ -41,7 +41,10 @@ func TestBatchConvert(t *testing.T) {
 	}
 
 	progress := make(chan Result)
-	go BatchConvert([]string{imgPath}, outputDir, opts, 1, progress)
+	jobsList := []ConverterJob{
+		{InputPath: imgPath, OutputDir: outputDir},
+	}
+	go BatchConvert(jobsList, opts, 1, progress)
 
 	count := 0
 	for res := range progress {
@@ -134,6 +137,58 @@ func TestConvertWithMaxSize(t *testing.T) {
 
 	if info.Size() > maxSize {
 		t.Logf("Note: final size %d still exceeds maxSize %d because min quality reached", info.Size(), maxSize)
+	}
+}
+
+func TestBatchConvertRecursive(t *testing.T) {
+	tempDir, err := os.MkdirTemp("", "goconv_recursive_test")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.RemoveAll(tempDir)
+
+	inputDir := filepath.Join(tempDir, "input")
+	outputDir := filepath.Join(tempDir, "output")
+
+	// Create nested structure
+	subDir := filepath.Join(inputDir, "a", "b")
+	os.MkdirAll(subDir, 0755)
+
+	imgPath := filepath.Join(subDir, "test.png")
+	img := image.NewRGBA(image.Rect(0, 0, 10, 10))
+	f, err := os.Create(imgPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	png.Encode(f, img)
+	f.Close()
+
+	opts := Options{
+		Format:  FormatJPG,
+		Quality: 80,
+	}
+
+	// In a real scenario, the CLI would calculate these
+	relPath, _ := filepath.Rel(inputDir, filepath.Dir(imgPath))
+	jobOutputDir := filepath.Join(outputDir, relPath)
+	os.MkdirAll(jobOutputDir, 0755)
+
+	jobsList := []ConverterJob{
+		{InputPath: imgPath, OutputDir: jobOutputDir},
+	}
+
+	progress := make(chan Result)
+	go BatchConvert(jobsList, opts, 1, progress)
+
+	for res := range progress {
+		if res.Error != nil {
+			t.Errorf("Conversion failed: %v", res.Error)
+		}
+	}
+
+	expectedOutput := filepath.Join(outputDir, "a", "b", "test.jpg")
+	if _, err := os.Stat(expectedOutput); os.IsNotExist(err) {
+		t.Errorf("Output file was not created at expected location: %s", expectedOutput)
 	}
 }
 

@@ -19,6 +19,11 @@ type Result struct {
 	Error      error
 }
 
+type ConverterJob struct {
+	InputPath string
+	OutputDir string
+}
+
 func resizeImage(img image.Image, width, height int) image.Image {
 	bounds := img.Bounds()
 	origWidth := bounds.Dx()
@@ -123,20 +128,20 @@ func Convert(inputPath, outputDir string, opts Options) Result {
 	return Result{InputPath: inputPath, OutputPath: outputPath}
 }
 
-func BatchConvert(inputPaths []string, outputDir string, opts Options, jobs int, progress chan<- Result) {
+func BatchConvert(jobsList []ConverterJob, opts Options, jobs int, progress chan<- Result) {
 	if jobs <= 0 {
 		jobs = 1
 	}
 
 	var wg sync.WaitGroup
-	paths := make(chan string, len(inputPaths))
+	jobChan := make(chan ConverterJob, len(jobsList))
 
 	for i := 0; i < jobs; i++ {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			for path := range paths {
-				res := Convert(path, outputDir, opts)
+			for job := range jobChan {
+				res := Convert(job.InputPath, job.OutputDir, opts)
 				if progress != nil {
 					progress <- res
 				}
@@ -144,10 +149,10 @@ func BatchConvert(inputPaths []string, outputDir string, opts Options, jobs int,
 		}()
 	}
 
-	for _, path := range inputPaths {
-		paths <- path
+	for _, job := range jobsList {
+		jobChan <- job
 	}
-	close(paths)
+	close(jobChan)
 
 	wg.Wait()
 	if progress != nil {
