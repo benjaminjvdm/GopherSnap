@@ -55,6 +55,37 @@ var convertCmd = &cobra.Command{
 			return
 		}
 
+		baseInputDir := inputPath
+		info, err := os.Stat(inputPath)
+		if err == nil && !info.IsDir() {
+			baseInputDir = filepath.Dir(inputPath)
+		}
+
+		var jobsList []converter.ConverterJob
+		for _, file := range files {
+			relPath, err := filepath.Rel(baseInputDir, filepath.Dir(file))
+			if err != nil {
+				relPath = "."
+			}
+			jobOutputDir := filepath.Join(outputDir, relPath)
+			jobsList = append(jobsList, converter.ConverterJob{
+				InputPath: file,
+				OutputDir: jobOutputDir,
+			})
+		}
+
+		// Pre-create directory structure
+		uniqueDirs := make(map[string]bool)
+		for _, job := range jobsList {
+			uniqueDirs[job.OutputDir] = true
+		}
+		for dir := range uniqueDirs {
+			if err := os.MkdirAll(dir, 0755); err != nil {
+				fmt.Printf("Error creating directory %s: %v\n", dir, err)
+				os.Exit(1)
+			}
+		}
+
 		var parsedMaxSize int64
 		if width < 0 || height < 0 {
 			fmt.Println(errorStyle.Render("Error: width and height must be non-negative"))
@@ -83,9 +114,9 @@ var convertCmd = &cobra.Command{
 		}
 
 		fmt.Println(titleStyle.Render("🚀 GopherSnap: Starting Batch Processing"))
-		fmt.Printf("Converting %d files to %s (quality: %d, workers: %d)\n\n", len(files), targetFormat, quality, jobs)
+		fmt.Printf("Converting %d files to %s (quality: %d, workers: %d)\n\n", len(jobsList), targetFormat, quality, jobs)
 
-		bar := progressbar.NewOptions(len(files),
+		bar := progressbar.NewOptions(len(jobsList),
 			progressbar.OptionSetDescription("Processing"),
 			progressbar.OptionSetWriter(os.Stderr),
 			progressbar.OptionShowCount(),
@@ -100,7 +131,7 @@ var convertCmd = &cobra.Command{
 			}))
 
 		progress := make(chan converter.Result)
-		go converter.BatchConvert(files, outputDir, opts, jobs, progress)
+		go converter.BatchConvert(jobsList, opts, jobs, progress)
 
 		var results []converter.Result
 		for res := range progress {
