@@ -44,6 +44,9 @@ var convertCmd = &cobra.Command{
 	Use:   "convert",
 	Short: "Convert images to a specified format",
 	Run: func(cmd *cobra.Command, args []string) {
+		inputPath = filepath.Clean(inputPath)
+		outputDir = filepath.Clean(outputDir)
+
 		files, err := findFiles(inputPath)
 		if err != nil {
 			fmt.Printf("Error finding files: %v\n", err)
@@ -155,17 +158,18 @@ var convertCmd = &cobra.Command{
 }
 
 func findFiles(path string) ([]string, error) {
+	cleanPath := filepath.Clean(path)
 	var files []string
-	info, err := os.Stat(path)
+	info, err := os.Stat(cleanPath)
 	if err != nil {
 		return nil, err
 	}
 
 	if !info.IsDir() {
-		return []string{path}, nil
+		return []string{cleanPath}, nil
 	}
 
-	err = filepath.Walk(path, func(p string, info os.FileInfo, err error) error {
+	err = filepath.Walk(cleanPath, func(p string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
