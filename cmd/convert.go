@@ -70,7 +70,7 @@ var convertCmd = &cobra.Command{
 			if err != nil {
 				relPath = "."
 			}
-			jobOutputDir := filepath.Join(outputDir, relPath)
+			jobOutputDir := filepath.Clean(filepath.Join(outputDir, relPath))
 			jobsList = append(jobsList, converter.ConverterJob{
 				InputPath: file,
 				OutputDir: jobOutputDir,
@@ -176,7 +176,7 @@ func findFiles(path string) ([]string, error) {
 		if !info.IsDir() {
 			ext := strings.ToLower(filepath.Ext(p))
 			if ext == ".jpg" || ext == ".jpeg" || ext == ".png" || ext == ".webp" || ext == ".avif" || ext == ".gif" {
-				files = append(files, p)
+				files = append(files, filepath.Clean(p))
 			}
 		}
 		return nil
