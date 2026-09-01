@@ -6,11 +6,6 @@ param(
 
 $ErrorActionPreference = "Stop"
 
-$BinDir = "binaries"
-if (-not (Test-Path $BinDir)) {
-    New-Item -ItemType Directory -Path $BinDir | Out-Null
-}
-
 if ($Test) {
     Write-Host "Running full test suite..." -ForegroundColor Cyan
     go test -v -cover ./...
@@ -21,23 +16,22 @@ if ($Package) {
     Write-Host "Generating Windows PE resources..." -ForegroundColor Cyan
     go run github.com/tc-hib/go-winres@latest make --arch amd64,arm64,386
 
-    Write-Host "Building binaries/gophersnap.exe..." -ForegroundColor Cyan
+    Write-Host "Building gophersnap.exe..." -ForegroundColor Cyan
     $env:CGO_ENABLED = "0"
     $env:GOOS = "windows"
     $env:GOARCH = "amd64"
-    go build -ldflags="-s -w" -o "$BinDir/gophersnap.exe" main.go
+    go build -ldflags="-s -w" -o gophersnap.exe main.go
 
-    Write-Host "Packaging binaries/gophersnap_windows_x64.zip..." -ForegroundColor Cyan
-    $ZipPath = "$BinDir/gophersnap_windows_x64.zip"
-    if (Test-Path $ZipPath) {
-        Remove-Item $ZipPath -Force
+    Write-Host "Packaging gophersnap_windows_x64.zip..." -ForegroundColor Cyan
+    if (Test-Path "gophersnap_windows_x64.zip") {
+        Remove-Item "gophersnap_windows_x64.zip" -Force
     }
-    Compress-Archive -Path "$BinDir/gophersnap.exe", "README.md", "LICENSE" -DestinationPath $ZipPath
-    Write-Host "Successfully packaged $ZipPath" -ForegroundColor Green
+    Compress-Archive -Path "gophersnap.exe", "README.md", "LICENSE" -DestinationPath "gophersnap_windows_x64.zip"
+    Write-Host "Successfully packaged gophersnap_windows_x64.zip" -ForegroundColor Green
     exit 0
 }
 
-Write-Host "Building standalone binaries/gophersnap.exe..." -ForegroundColor Cyan
+Write-Host "Building standalone gophersnap.exe..." -ForegroundColor Cyan
 $env:CGO_ENABLED = "0"
-go build -ldflags="-s -w" -o "$BinDir/gophersnap.exe" main.go
-Write-Host "Build complete: $BinDir/gophersnap.exe" -ForegroundColor Green
+go build -ldflags="-s -w" -o gophersnap.exe main.go
+Write-Host "Build complete: gophersnap.exe" -ForegroundColor Green

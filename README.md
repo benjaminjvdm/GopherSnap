@@ -63,29 +63,29 @@ make build
 ### Windows PowerShell (`build.ps1`)
 
 ```powershell
-# Default build: compiles standalone binaries/gophersnap.exe
+# Default build: compiles standalone gophersnap.exe with stripped symbols
 .\build.ps1
 
 # Run full test suite with coverage report
 .\build.ps1 -Test
 
-# Generate Windows PE resources and package release ZIP in binaries/
+# Generate Windows PE resources and package release ZIP
 .\build.ps1 -Package
 ```
 
 ### Unix Makefile (`Makefile`)
 
 ```bash
-# Build standalone binary into binaries/gophersnap
+# Build standalone binary
 make build
 
 # Run test suite
 make test
 
-# Generate Windows PE resources and release package in binaries/
+# Generate Windows PE resources and release package
 make release
 
-# Clean binaries/ directory and build artifacts
+# Clean binaries and build artifacts
 make clean
 ```
 

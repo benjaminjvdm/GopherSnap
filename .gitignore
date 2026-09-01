@@ -1,6 +1,3 @@
-# Binaries directory
-binaries/
-
 # Binaries for programs and plugins
 gophersnap
 gophersnap.exe
